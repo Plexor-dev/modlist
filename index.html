@@ -32,7 +32,7 @@
     #drop-frame {
       width: 100%;
       height: 200px;
-      border: 2px dashed #ccc;
+      border: 2px dashed gray;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -98,17 +98,33 @@
     h1 {
       font-size: 32px;
     }
+
+    a {
+      background-color: aquamarine;
+      border-radius: 20%;
+      padding: 15px;
+      margin: 10px;
+      border: 2px solid transparent;
+      width: 120px;
+      text-align: center;
+      font-size: 1.4rem;
+    }
+
+    .select-files-button {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>Arrastra o selecciona tus archivos de mods (preferiblemente terminados en .pak)</h1>
+  <h3>Manten Ctrl cuando seleccionas/deseleccionas los archivos</h3>
   
   <div class="container">
     <!-- Selector de archivos -->
     <div class="file-selector">
       <div id="drop-frame">Arrastra tus archivos aquí o</div>
       <input type="file" id="file-input" multiple style="display: none;">
-      <button id="select-files-button">Seleccionar archivos</button>
+      <button id="select-files-button" class="select-files-button">Seleccionar archivos</button>
 
       <!-- Disco selection -->
       <div>
@@ -147,76 +163,100 @@
     const fileListElement = document.getElementById('file-list');
     const customDiskInput = document.getElementById('custom-disk-input');
     const fileInputElement = document.getElementById('file-input');
-
+    
+    const disallowedExtensions = ['.txt', '.rar', '.zip', '.7z']; // Extensiones no permitidas
+    let filesList = []; // Lista interna para almacenar los archivos
+  
+    function updateDownloadLinks() {
+      let modlistContent = '';
+      let modserverContent = '';
+  
+      filesList.forEach(file => {
+        const fileName = file.name;
+        modlistContent += `*ConanSandbox/Mods/${fileName}\n`;
+        modlistContent += `*${selectedDisk}:/XboxGames/Conan Exiles/Content/WindowsNoEditor/ConanSandbox/Mods/${fileName}\n`;
+        modserverContent += `${selectedDisk}:/XboxGames/Conan Exiles/Content/WindowsNoEditor/ConanSandbox/Mods/${fileName},\n`;
+      });
+  
+      const modlistBlob = new Blob([modlistContent], { type: 'text/plain' });
+      const modlistUrl = URL.createObjectURL(modlistBlob);
+      const downloadLink = document.getElementById('download-link');
+      downloadLink.href = modlistUrl;
+      downloadLink.style.display = filesList.length ? 'block' : 'none';
+      downloadLink.textContent = 'Descargar modlist.txt';
+  
+      const modserverBlob = new Blob([modserverContent], { type: 'text/plain' });
+      const modserverUrl = URL.createObjectURL(modserverBlob);
+      const downloadServerLink = document.getElementById('download-server-link');
+      downloadServerLink.href = modserverUrl;
+      downloadServerLink.style.display = filesList.length ? 'block' : 'none';
+      downloadServerLink.textContent = 'Descargar modserver.txt';
+  
+      document.getElementById('status').innerText = filesList.length ? `Archivos generados para Disco ${selectedDisk}. Haz clic en los enlaces para descargar.` : 'No hay archivos seleccionados.';
+    }
+  
     function handleFiles(fileList) {
       if (!selectedDisk) {
         document.getElementById('status').innerText = 'Por favor, selecciona un disco (C, F o Otro).';
         return;
       }
-
-      const files = Array.from(fileList); // Convertir a array si no es iterable
-
-      let modlistContent = '';
-      let modserverContent = '';
-
-      fileListElement.innerHTML = ''; // Limpiar lista de archivos
-
+  
+      const files = Array.from(fileList);
+      let invalidFiles = [];
+  
       files.forEach(file => {
-        const fileName = file.name;
-        modlistContent += `*ConanSandbox/Mods/${fileName}\n`;
-        modlistContent += `*${selectedDisk}:/XboxGames/Conan Exiles/Content/WindowsNoEditor/ConanSandbox/Mods/${fileName}\n`;
-        modserverContent += `${selectedDisk}:/XboxGames/Conan Exiles/Content/WindowsNoEditor/ConanSandbox/Mods/${fileName},\n`;
-
-        // Mostrar archivos en la lista
+        const fileExtension = file.name.slice(((file.name.lastIndexOf(".") - 1) >>> 0) + 2).toLowerCase();
+        if (disallowedExtensions.includes(`.${fileExtension}`)) {
+          invalidFiles.push(file.name);
+        } else {
+          filesList.push(file); // Agregar archivos válidos a la lista interna
+        }
+      });
+  
+      if (invalidFiles.length) {
+        document.getElementById('status').innerText = `Archivos no permitidos: ${invalidFiles.join(', ')}. No se han agregado a la lista.`;
+      }
+  
+      renderFileList();
+      updateDownloadLinks();
+    }
+  
+    function renderFileList() {
+      fileListElement.innerHTML = ''; // Limpiar lista de archivos
+  
+      filesList.forEach((file, index) => {
         const listItem = document.createElement('li');
-        listItem.innerHTML = `${fileName} <button class="remove-btn" title="Eliminar">X</button>`;
+        listItem.innerHTML = `${file.name} <button class="remove-btn" title="Eliminar">X</button>`;
         fileListElement.appendChild(listItem);
-
+  
         // Agregar funcionalidad para eliminar archivos de la lista
         listItem.querySelector('.remove-btn').addEventListener('click', () => {
-          listItem.remove();
-          // Aquí también puedes actualizar la lista interna si se mantiene una lista de archivos
+          filesList.splice(index, 1); // Eliminar archivo de la lista interna
+          renderFileList(); // Volver a renderizar la lista de archivos
+          updateDownloadLinks(); // Actualizar los enlaces de descarga
         });
       });
-
-      // Crear un blob con el contenido de modlist.txt
-      const modlistBlob = new Blob([modlistContent], { type: 'text/plain' });
-      const modlistUrl = URL.createObjectURL(modlistBlob);
-      const downloadLink = document.getElementById('download-link');
-      downloadLink.href = modlistUrl;
-      downloadLink.style.display = 'block';
-      downloadLink.textContent = 'Descargar modlist.txt';
-
-      // Crear un blob con el contenido de modserver.txt
-      const modserverBlob = new Blob([modserverContent], { type: 'text/plain' });
-      const modserverUrl = URL.createObjectURL(modserverBlob);
-      const downloadServerLink = document.getElementById('download-server-link');
-      downloadServerLink.href = modserverUrl;
-      downloadServerLink.style.display = 'block';
-      downloadServerLink.textContent = 'Descargar modserver.txt';
-
-      document.getElementById('status').innerText = `Archivos generados para Disco ${selectedDisk}. Haz clic en los enlaces para descargar.`;
     }
-
+  
     document.getElementById('drop-frame').addEventListener('dragover', (event) => {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'copy';
     });
-
+  
     document.getElementById('drop-frame').addEventListener('drop', (event) => {
       event.preventDefault();
       event.stopPropagation();
       handleFiles(event.dataTransfer.files);
     });
-
+  
     document.getElementById('select-files-button').addEventListener('click', () => {
       fileInputElement.click();
     });
-
+  
     fileInputElement.addEventListener('change', (event) => {
       handleFiles(event.target.files);
     });
-
+  
     document.querySelectorAll('input[name="disk"]').forEach((radio) => {
       radio.addEventListener('change', (event) => {
         selectedDisk = event.target.value;
@@ -227,16 +267,17 @@
           document.getElementById('custom-disk').style.display = 'none';
           document.getElementById('status').innerText = `Disco ${selectedDisk} seleccionado.`;
         }
+        updateDownloadLinks(); // Actualizar enlaces cuando cambia el disco
       });
     });
-
+  
     customDiskInput.addEventListener('input', () => {
       const customDiskValue = customDiskInput.value.toUpperCase();
       if (customDiskValue.length > 1) {
         customDiskInput.value = customDiskValue.slice(0, 1);
       }
     });
-
+  
     // Actualizar archivos automáticamente cuando se seleccionan o arrastran archivos
     document.querySelectorAll('input[name="disk"]').forEach((radio) => {
       radio.addEventListener('change', () => {
@@ -246,9 +287,7 @@
       });
     });
   </script>
+  
+  
 </body>
 </html>
-
-
-
-
