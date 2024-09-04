@@ -115,11 +115,16 @@
     }
 
     a:hover {
-      opacity: 0.7;
+      opacity: 0.8;
     }
 
     .select-files-button {
       margin-top: 20px;
+      cursor: pointer;
+    }
+
+    label, input {
+      cursor: pointer;
     }
   </style>
 </head>
@@ -172,7 +177,7 @@
     const customDiskInput = document.getElementById('custom-disk-input');
     const fileInputElement = document.getElementById('file-input');
     
-    const disallowedExtensions = ['.txt', '.rar', '.zip', '.7z']; // Extensiones no permitidas
+    const disallowedExtensions = ['.txt', '.rar', '.zip', '.7z', '.html']; // Extensiones no permitidas
     let filesList = []; // Lista interna para almacenar los archivos
   
     function updateDownloadLinks() {
@@ -216,8 +221,8 @@
         const fileExtension = file.name.slice(((file.name.lastIndexOf(".") - 1) >>> 0) + 2).toLowerCase();
         if (disallowedExtensions.includes(`.${fileExtension}`)) {
           invalidFiles.push(file.name);
-        } else {
-          filesList.push(file); // Agregar archivos válidos a la lista interna
+        } else if (!filesList.some(existingFile => existingFile.name === file.name)) {
+          filesList.push(file); // Agregar archivos válidos a la lista interna si no están ya presentes
         }
       });
   
@@ -295,6 +300,7 @@
       });
     });
   </script>
+  
   
   
 </body>
