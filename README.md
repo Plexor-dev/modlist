@@ -12,13 +12,17 @@ modserve.txt: Contains the paths in the correct format for the server.
 
 # Example of a Mod List
 
+```
 *ConanSandbox/Mods/AdvancedGliders.pak
 *C:/XboxGames/Conan Exiles/Content/WindowsNoEditor/ConanSandbox/Mods/UIMod_Hosav.pak
+```
 
 # Example of a Mod Serve
 
+```
 C:/XboxGames/Conan Exiles/Content/WindowsNoEditor/ConanSandbox/Mods/StylistPlus.pak,
 C:/XboxGames/Conan Exiles/Content/WindowsNoEditor/ConanSandbox/Mods/IMMERSIVE_ENTERTAINERS.pak,
+```
 
 # Usage
 Select Mods: Drag and drop your mod files or manually select the mods you want to load.
@@ -27,6 +31,6 @@ Automatic Generation: The application will automatically generate the modlist.tx
 Download Files: Once generated, you can download both files to use directly in the game or on the server.
 
 ## Requirements
--Operating System: Windows
--Xbox PC application installed with Conan Exiles
--Ability to access the game installation path.
+- Operating System: Windows
+- Xbox PC application installed with Conan Exiles
+- Ability to access the game installation path.
