@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Handler</title>
+  <style>
+    body {
+      margin: 15px;
+      display: flex;
+      gap: 20px;
+      flex-direction: column;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+    }
+
+    .file-selector, .file-display {
+      flex: 1;
+    }
+
+    button {
+      width: 200px;
+      height: 40px;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    #drop-frame {
+      width: 100%;
+      height: 200px;
+      border: 2px dashed #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      line-height: 200px;
+    }
+    
+    #status {
+      margin-top: 20px;
+    }
+    
+    #download-link, #download-server-link {
+      display: none;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .radio-button {
+      margin-right: 10px;
+    }
+    
+    #file-list {
+      margin-top: 20px;
+      list-style-type: none;
+      padding: 0;
+    }
+    
+    #file-list li {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background: #f9f9f9;
+    }
+    
+    .remove-btn {
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
+      text-align: center;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    
+    #custom-disk {
+      display: none;
+      margin-top: 10px;
+    }
+    
+    #custom-disk-input {
+      width: 40px;
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: 32px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Arrastra o selecciona tus archivos de mods (preferiblemente terminados en .pak)</h1>
+  
+  <div class="container">
+    <!-- Selector de archivos -->
+    <div class="file-selector">
+      <div id="drop-frame">Arrastra tus archivos aquí o</div>
+      <input type="file" id="file-input" multiple style="display: none;">
+      <button id="select-files-button">Seleccionar archivos</button>
+
+      <!-- Disco selection -->
+      <div>
+        <h2>Selecciona tu Disco</h2>
+        <label>
+          <input type="radio" name="disk" id="disk-c" class="radio-button" value="C">
+          Disco C
+        </label>
+        <label>
+          <input type="radio" name="disk" id="disk-f" class="radio-button" value="F">
+          Disco F
+        </label>
+        <label>
+          <input type="radio" name="disk" id="disk-other" class="radio-button" value="Other">
+          Otro
+        </label>
+      </div>
+      <div id="custom-disk">
+        <label for="custom-disk-input">Ingresa letra personalizada:</label>
+        <input type="text" id="custom-disk-input" maxlength="1">
+      </div>
+    </div>
+    
+    <!-- Archivos seleccionados -->
+    <div class="file-display">
+      <a id="download-link" class="hidden" download="modlist.txt">Descargar modlist.txt</a>
+      <a id="download-server-link" class="hidden" download="modserver.txt">Descargar modserver.txt</a>
+
+      <div id="status"></div>
+      <ul id="file-list"></ul>
+    </div>
+  </div>
+
+  <script>
+    let selectedDisk = '';
+    const fileListElement = document.getElementById('file-list');
+    const customDiskInput = document.getElementById('custom-disk-input');
+    const fileInputElement = document.getElementById('file-input');
+
+    function handleFiles(fileList) {
+      if (!selectedDisk) {
+        document.getElementById('status').innerText = 'Por favor, selecciona un disco (C, F o Otro).';
+        return;
+      }
+
+      const files = Array.from(fileList); // Convertir a array si no es iterable
+
+      let modlistContent = '';
+      let modserverContent = '';
+
+      fileListElement.innerHTML = ''; // Limpiar lista de archivos
+
+      files.forEach(file => {
+        const fileName = file.name;
+        modlistContent += `*ConanSandbox/Mods/${fileName}\n`;
+        modlistContent += `*${selectedDisk}:/XboxGames/Conan Exiles/Content/WindowsNoEditor/ConanSandbox/Mods/${fileName}\n`;
+        modserverContent += `${selectedDisk}:/XboxGames/Conan Exiles/Content/WindowsNoEditor/ConanSandbox/Mods/${fileName},\n`;
+
+        // Mostrar archivos en la lista
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `${fileName} <button class="remove-btn" title="Eliminar">X</button>`;
+        fileListElement.appendChild(listItem);
+
+        // Agregar funcionalidad para eliminar archivos de la lista
+        listItem.querySelector('.remove-btn').addEventListener('click', () => {
+          listItem.remove();
+          // Aquí también puedes actualizar la lista interna si se mantiene una lista de archivos
+        });
+      });
+
+      // Crear un blob con el contenido de modlist.txt
+      const modlistBlob = new Blob([modlistContent], { type: 'text/plain' });
+      const modlistUrl = URL.createObjectURL(modlistBlob);
+      const downloadLink = document.getElementById('download-link');
+      downloadLink.href = modlistUrl;
+      downloadLink.style.display = 'block';
+      downloadLink.textContent = 'Descargar modlist.txt';
+
+      // Crear un blob con el contenido de modserver.txt
+      const modserverBlob = new Blob([modserverContent], { type: 'text/plain' });
+      const modserverUrl = URL.createObjectURL(modserverBlob);
+      const downloadServerLink = document.getElementById('download-server-link');
+      downloadServerLink.href = modserverUrl;
+      downloadServerLink.style.display = 'block';
+      downloadServerLink.textContent = 'Descargar modserver.txt';
+
+      document.getElementById('status').innerText = `Archivos generados para Disco ${selectedDisk}. Haz clic en los enlaces para descargar.`;
+    }
+
+    document.getElementById('drop-frame').addEventListener('dragover', (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+    });
+
+    document.getElementById('drop-frame').addEventListener('drop', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      handleFiles(event.dataTransfer.files);
+    });
+
+    document.getElementById('select-files-button').addEventListener('click', () => {
+      fileInputElement.click();
+    });
+
+    fileInputElement.addEventListener('change', (event) => {
+      handleFiles(event.target.files);
+    });
+
+    document.querySelectorAll('input[name="disk"]').forEach((radio) => {
+      radio.addEventListener('change', (event) => {
+        selectedDisk = event.target.value;
+        if (selectedDisk === 'Other') {
+          document.getElementById('custom-disk').style.display = 'block';
+          customDiskInput.focus();
+        } else {
+          document.getElementById('custom-disk').style.display = 'none';
+          document.getElementById('status').innerText = `Disco ${selectedDisk} seleccionado.`;
+        }
+      });
+    });
+
+    customDiskInput.addEventListener('input', () => {
+      const customDiskValue = customDiskInput.value.toUpperCase();
+      if (customDiskValue.length > 1) {
+        customDiskInput.value = customDiskValue.slice(0, 1);
+      }
+    });
+
+    // Actualizar archivos automáticamente cuando se seleccionan o arrastran archivos
+    document.querySelectorAll('input[name="disk"]').forEach((radio) => {
+      radio.addEventListener('change', () => {
+        if (fileInputElement.files.length > 0) {
+          handleFiles(fileInputElement.files);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
+
+
+
+
