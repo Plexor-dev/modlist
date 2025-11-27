@@ -97,6 +97,8 @@
     #custom-disk-input {
       width: 40px;
       text-align: center;
+      padding: 5px;
+      font-size: 16px;
     }
     
     h1 {
@@ -157,7 +159,7 @@
       </div>
       <div id="custom-disk">
         <label for="custom-disk-input">Ingresa letra personalizada:</label>
-        <input type="text" id="custom-disk-input" maxlength="1">
+        <input type="text" id="custom-disk-input" maxlength="1" placeholder="D">
       </div>
     </div>
     
@@ -177,8 +179,8 @@
     const customDiskInput = document.getElementById('custom-disk-input');
     const fileInputElement = document.getElementById('file-input');
     
-    const disallowedExtensions = ['.txt', '.rar', '.zip', '.7z', '.html']; // Extensiones no permitidas
-    let filesList = []; // Lista interna para almacenar los archivos
+    const disallowedExtensions = ['.txt', '.rar', '.zip', '.7z', '.html'];
+    let filesList = [];
   
     function updateDownloadLinks() {
       let modlistContent = '';
@@ -222,7 +224,7 @@
         if (disallowedExtensions.includes(`.${fileExtension}`)) {
           invalidFiles.push(file.name);
         } else if (!filesList.some(existingFile => existingFile.name === file.name)) {
-          filesList.push(file); // Agregar archivos válidos a la lista interna si no están ya presentes
+          filesList.push(file);
         }
       });
   
@@ -235,18 +237,17 @@
     }
   
     function renderFileList() {
-      fileListElement.innerHTML = ''; // Limpiar lista de archivos
+      fileListElement.innerHTML = '';
   
       filesList.forEach((file, index) => {
         const listItem = document.createElement('li');
         listItem.innerHTML = `${file.name} <button class="remove-btn" title="Eliminar">X</button>`;
         fileListElement.appendChild(listItem);
   
-        // Agregar funcionalidad para eliminar archivos de la lista
         listItem.querySelector('.remove-btn').addEventListener('click', () => {
-          filesList.splice(index, 1); // Eliminar archivo de la lista interna
-          renderFileList(); // Volver a renderizar la lista de archivos
-          updateDownloadLinks(); // Actualizar los enlaces de descarga
+          filesList.splice(index, 1);
+          renderFileList();
+          updateDownloadLinks();
         });
       });
     }
@@ -276,22 +277,37 @@
         if (selectedDisk === 'Other') {
           document.getElementById('custom-disk').style.display = 'block';
           customDiskInput.focus();
+          selectedDisk = customDiskInput.value.toUpperCase() || '';
+          if (!selectedDisk) {
+            document.getElementById('status').innerText = 'Por favor, ingresa una letra de disco.';
+          } else {
+            document.getElementById('status').innerText = `Disco ${selectedDisk} seleccionado.`;
+          }
         } else {
           document.getElementById('custom-disk').style.display = 'none';
           document.getElementById('status').innerText = `Disco ${selectedDisk} seleccionado.`;
         }
-        updateDownloadLinks(); // Actualizar enlaces cuando cambia el disco
+        updateDownloadLinks();
       });
     });
   
     customDiskInput.addEventListener('input', () => {
-      const customDiskValue = customDiskInput.value.toUpperCase();
+      let customDiskValue = customDiskInput.value.toUpperCase();
       if (customDiskValue.length > 1) {
-        customDiskInput.value = customDiskValue.slice(0, 1);
+        customDiskValue = customDiskValue.slice(0, 1);
+      }
+      customDiskInput.value = customDiskValue;
+      
+      // Actualizar selectedDisk cuando se escribe en el input
+      if (document.getElementById('disk-other').checked) {
+        selectedDisk = customDiskValue;
+        if (customDiskValue) {
+          document.getElementById('status').innerText = `Disco ${selectedDisk} seleccionado.`;
+          updateDownloadLinks();
+        }
       }
     });
   
-    // Actualizar archivos automáticamente cuando se seleccionan o arrastran archivos
     document.querySelectorAll('input[name="disk"]').forEach((radio) => {
       radio.addEventListener('change', () => {
         if (fileInputElement.files.length > 0) {
@@ -300,8 +316,5 @@
       });
     });
   </script>
-  
-  
-  
 </body>
 </html>
